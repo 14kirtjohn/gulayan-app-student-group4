@@ -9,6 +9,8 @@ function Login() {
     password: '',
     rememberMe: false
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -20,7 +22,28 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    //TODO make the login process functional
+    setError('')
+    setLoading(true)
+    try {
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+        remember: formData.rememberMe
+      }
+
+      const res = await api.post('/login', payload)
+
+      const token = res?.data?.token || res?.data?.access_token || res?.data?.data?.token
+      if (!token) throw new Error(res?.data?.message || 'Login failed')
+
+      localStorage.setItem('token', token)
+      navigate('/dashboard')
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || 'Unable to sign in'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
 
   }
 
@@ -45,6 +68,11 @@ function Login() {
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-green-100">
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-100 p-2 rounded">
+                {error}
+              </div>
+            )}
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -87,11 +115,19 @@ function Login() {
             {/* TODO disable and show loading icon while logging in. */}
             <button
               type="submit"
-              className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold 
+              disabled={loading}
+              aria-busy={loading}
+              className={`w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-lg font-semibold 
                             hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 
-                            focus:ring-offset-2 transition duration-200 shadow-md"
+                            focus:ring-offset-2 transition duration-200 shadow-md ${loading ? 'opacity-80 cursor-not-allowed' : ''}`}
             >
-              Sign In
+              {loading && (
+                <svg className="w-5 h-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+              )}
+              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             </button>
           </form>
 
@@ -110,8 +146,9 @@ function Login() {
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
             <button
-              onClick={() => navigate('/signup')}
-              className="cursor-pointer text-green-600 hover:text-green-700 font-semibold">
+              onClick={() => { if (!loading) navigate('/signup') }}
+              disabled={loading}
+              className={`cursor-pointer text-green-600 hover:text-green-700 font-semibold ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
               Sign up for free
             </button>
           </p>

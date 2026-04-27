@@ -23,9 +23,34 @@ function Signup() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log('Signup data:', formData)
-    // Add your signup logic here
-    // Navigate to main page after successful signup
+    if (typeof console?.log === 'function') console.log('Signup data:', formData)
+    ;(async () => {
+      try {
+        const payload = {
+          name: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          password_confirmation: formData.confirmPassword,
+          agree: formData.agreeToTerms
+        }
+
+        const res = await fetch('http://gulayan-server.test/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.message || 'Signup failed')
+
+        const token = data?.token || data?.access_token || data?.data?.token
+        if (token) localStorage.setItem('token', token)
+        navigate('/dashboard')
+      } catch (err) {
+        alert(err?.message || 'Unable to create account')
+      }
+    })()
     navigate('/main')
   }
 
