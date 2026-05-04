@@ -18,6 +18,8 @@ function Records() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(15);
   const observerTarget = useRef(null);
   const isInInitialMount = useRef(true);
 
@@ -57,29 +59,27 @@ function Records() {
       setIsLoadingMore(append);
       if (!append) setIsLoading(true);
       
-      const res = await api.get(`/plants?page=${page}`);
+      const res = await api.get(`/plants?page=${page}&per_page=${pageSize}`);
       console.log("=== API RESPONSE ===");
       console.log("Full Response:", res);
-      console.log("res.data:", res.data);
-      console.log("res.data.data:", res.data.data);
-      console.log("Is res.data an array?", Array.isArray(res.data));
-      console.log("Is res.data.data an array?", Array.isArray(res.data.data));
       
       // Handle different response structures
       let newRecords = [];
       if (Array.isArray(res.data.data)) {
-        console.log("✓ Found data in res.data.data");
         newRecords = res.data.data;
       } else if (Array.isArray(res.data)) {
-        console.log("✓ Found data in res.data");
         newRecords = res.data;
       } else if (res.data && typeof res.data === 'object') {
-        console.log("✓ Extracting from object");
         newRecords = Object.values(res.data).flat().filter(item => typeof item === 'object');
       }
       
-      console.log("Final newRecords:", newRecords);
+      console.log("Processed Records:", newRecords);
       console.log("Number of records:", newRecords.length);
+      
+      // Extract total from response if available
+      if (res.data.total) {
+        setTotalRecords(res.data.total);
+      }
       
       setRecords(prev => append ? [...prev, ...newRecords] : newRecords);
       setHasMore(newRecords.length > 0);
@@ -356,6 +356,44 @@ function Records() {
         {!hasMore && records.length > 0 && !searchTerm && (
           <div className="text-center py-4 text-gray-400 text-sm border-t border-gray-100">
             No more records to load
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!searchTerm && records.length > 0 && (
+          <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50">
+            <div className="text-sm text-gray-600">
+              Page <span className="font-medium">{currentPage}</span> 
+              {totalRecords > 0 && ` • Showing ${records.length} records`}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                    handleLoadRecords(currentPage - 1, false);
+                  }
+                }}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border border-gray-300 rounded text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                ← Previous
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (hasMore) {
+                    setCurrentPage(currentPage + 1);
+                    handleLoadRecords(currentPage + 1, false);
+                  }
+                }}
+                disabled={!hasMore}
+                className="px-3 py-1 border border-gray-300 rounded text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </div>
