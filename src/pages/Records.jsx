@@ -58,23 +58,36 @@ function Records() {
       if (!append) setIsLoading(true);
       
       const res = await api.get(`/plants?page=${page}`);
-      console.log("API Response:", res);
+      console.log("=== API RESPONSE ===");
+      console.log("Full Response:", res);
+      console.log("res.data:", res.data);
+      console.log("res.data.data:", res.data.data);
+      console.log("Is res.data an array?", Array.isArray(res.data));
+      console.log("Is res.data.data an array?", Array.isArray(res.data.data));
       
       // Handle different response structures
       let newRecords = [];
       if (Array.isArray(res.data.data)) {
+        console.log("✓ Found data in res.data.data");
         newRecords = res.data.data;
       } else if (Array.isArray(res.data)) {
+        console.log("✓ Found data in res.data");
         newRecords = res.data;
       } else if (res.data && typeof res.data === 'object') {
+        console.log("✓ Extracting from object");
         newRecords = Object.values(res.data).flat().filter(item => typeof item === 'object');
       }
       
-      console.log("Processed Records:", newRecords);
+      console.log("Final newRecords:", newRecords);
+      console.log("Number of records:", newRecords.length);
+      
       setRecords(prev => append ? [...prev, ...newRecords] : newRecords);
       setHasMore(newRecords.length > 0);
     } catch (error) {
-      console.error("Error loading records:", error);
+      console.error("❌ Error loading records:", error);
+      console.error("Error message:", error?.message);
+      console.error("Response status:", error?.response?.status);
+      console.error("Response data:", error?.response?.data);
       toast.error(error?.response?.data?.message || "Error loading records.");
     } finally {
       setIsLoading(false);
