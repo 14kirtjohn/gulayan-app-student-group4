@@ -162,13 +162,24 @@ function Records() {
     try {
       const isDelete = confirm("Are you sure you want to delete this record?");
       if (isDelete) {
-        await api.delete(`plants/${data.id}`, data);
-        setRecords(prev => prev?.filter( val => data.id !== val.id))
+        console.log("=== DELETING RECORD ===");
+        console.log("Record ID:", data.id);
+        
+        await api.delete(`/plants/${data.id}`);
+        setRecords(prev => prev?.filter(val => data.id !== val.id))
         toast.success("Plant data deleted.");
       }
     } catch (error) {
-      console.error(error)
-      toast.error("Error encountered while deleting record.");
+      console.error("❌ Delete Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Errors:", error.response.data.errors);
+      }
+      
+      const errorMsg = error?.response?.data?.message || "Error encountered while deleting record.";
+      toast.error(errorMsg);
     }
   }
   const loadMore = useCallback(() => {
