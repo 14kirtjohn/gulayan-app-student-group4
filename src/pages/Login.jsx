@@ -113,22 +113,25 @@ function Login() {
             </div>
 
             {/* Submit Button */}
-            {/* TODO disable and show loading icon while logging in. */}
             <button
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className={`w-full flex items-center justify-center gap-2 bg-green-600 text-white py-3 rounded-lg font-semibold 
-                            hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 
-                            focus:ring-offset-2 transition duration-200 shadow-md ${loading ? 'opacity-80 cursor-not-allowed' : ''}`}
+              className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold 
+                            transition duration-200 shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 
+                            focus:ring-offset-2 ${loading 
+                              ? 'bg-green-400 cursor-not-allowed opacity-80' 
+                              : 'bg-green-600 text-white hover:bg-green-700'
+                            }`}
             >
-              {loading && (
-                <svg className="w-5 h-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                </svg>
+              {loading ? (
+                <>
+                  <PlantLoading className="w-5 h-5" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
               )}
-              <span>{loading ? 'Signing in...' : 'Sign In'}</span>
             </button>
           </form>
 
