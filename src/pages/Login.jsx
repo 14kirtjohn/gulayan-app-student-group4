@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
+import PlantLoading from '../components/PlantLoading'
 
 function Login() {
   const navigate = useNavigate()
@@ -9,6 +10,7 @@ function Login() {
     password: '',
     rememberMe: false
   })
+  const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -20,8 +22,22 @@ function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    //TODO make the login process functional
-
+    setLoading(true)
+    try {
+      // Mock role-based login
+      const role = formData.email.includes('@developer') ? 'developer' : 'farmer';
+      const userData = role === 'developer' ? 
+        { name: 'Maria Santos', role: 'Developer', initials: 'MS' } : 
+        { name: 'Juan Dela Cruz', role: 'Admin', initials: 'JD' };
+      
+      localStorage.setItem('token', 'mock-jwt-' + Date.now());
+      localStorage.setItem('user', JSON.stringify(userData));
+      navigate('/my-plants')
+    } catch (error) {
+      alert(error.response?.data?.message || error.message || 'Login failed')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -87,11 +103,19 @@ function Login() {
             {/* TODO disable and show loading icon while logging in. */}
             <button
               type="submit"
+              disabled={loading}
               className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold 
                             hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 
-                            focus:ring-offset-2 transition duration-200 shadow-md"
+                            focus:ring-offset-2 transition duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Sign In
+              {loading ? (
+                <>
+                  <PlantLoading className="w-5 h-5" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
 
@@ -111,7 +135,8 @@ function Login() {
             Don't have an account?{' '}
             <button
               onClick={() => navigate('/signup')}
-              className="cursor-pointer text-green-600 hover:text-green-700 font-semibold">
+              disabled={loading}
+              className="cursor-pointer text-green-600 hover:text-green-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:text-green-600">
               Sign up for free
             </button>
           </p>
