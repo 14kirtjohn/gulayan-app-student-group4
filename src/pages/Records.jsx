@@ -7,7 +7,7 @@ import { api } from '../api';
 import { toast } from 'sonner';
 
 function Records() {
-  // ui: add loading icon while ongoing ang loading ng records.
+  // ui: add loading icon while ongoing ang loading ng records..
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
