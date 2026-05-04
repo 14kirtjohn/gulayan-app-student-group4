@@ -146,13 +146,12 @@ function Login() {
           </div>
 
           {/* Sign Up Link */}
-          {/* TODO disable sign up link while logging in */}
           <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
             <button
               onClick={() => { if (!loading) navigate('/signup') }}
               disabled={loading}
-              className={`cursor-pointer text-green-600 hover:text-green-700 font-semibold ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              className={`inline-block cursor-pointer text-green-600 hover:text-green-700 font-semibold transition-colors ${loading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}>
               Sign up for free
             </button>
           </p>
