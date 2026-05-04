@@ -3,7 +3,17 @@ import { FaTimes } from 'react-icons/fa'
 import InputPriceField from '../../components/InputPriceField'
 
 function ModalEditRecord({ isOpen, onClose, onSubmit, data }) {
-  const [formData, setFormData] = useState(data)
+  const [formData, setFormData] = useState({
+    id: null,
+    name: '',
+    variety: '',
+    notes: '',
+    date_planted: '',
+    seedling_count: '',
+    batch_name: '',
+    starting_fund: '',
+    seedling_source: ''
+  })
   const plantVarieties = [
     "Vegetables",
     "Leafy Greens",
@@ -57,8 +67,13 @@ function ModalEditRecord({ isOpen, onClose, onSubmit, data }) {
     onClose()
   }
 
-  useEffect( () => {
-    setFormData(data);
+  useEffect(() => {
+    if (data) {
+      console.log("Edit Modal - Loading data:", data);
+      setFormData(data);
+    } else {
+      console.log("Edit Modal - No data provided");
+    }
   }, [data])
 
   if (!isOpen) return null

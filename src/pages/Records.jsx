@@ -96,26 +96,64 @@ function Records() {
   }
   const handleAddRecord = async (formData) => {
     try {
+      console.log("=== SUBMITTING FORM DATA ===");
+      console.log("Form Data:", formData);
+      
       const res = await api.post('/plants', formData);
       const newRecord = res.data.data || res.data;
       setRecords(prev => [newRecord, ...prev]);
       toast.success("New record saved.");
     } catch (error) {
-      console.error(error);
-      toast.error(error?.message || "Error encountered while saving record.");
+      console.error("❌ Add Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Validation Errors:");
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`  ${field}:`, messages);
+        });
+      }
+      
+      const errorMsg = error?.response?.data?.errors 
+        ? Object.entries(error.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
+        : error?.response?.data?.message || "Error encountered while saving record.";
+      
+      toast.error(errorMsg);
     }
 
     setIsModalOpen(false)
   }
   const handleUpdateRecord = async (data) => {
     try {
+      console.log("=== UPDATING RECORD ===");
+      console.log("Update Data:", data);
+      
       const res = await api.put(`/plants/${data.id}`, data);
       const updatedRecord = res.data.data || res.data;
       setRecords(prev => prev.map(record => record.id === data.id ? updatedRecord : record));
       toast.success("Plant data updated.");
     } catch (error) {
-      console.error(error);
-      toast.error(error?.message || "Error encountered during update.");
+      console.error("❌ Update Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Validation Errors:");
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`  ${field}:`, messages);
+        });
+      }
+      
+      const errorMsg = error?.response?.data?.errors 
+        ? Object.entries(error.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
+        : error?.response?.data?.message || "Error encountered during update.";
+      
+      toast.error(errorMsg);
     } finally {
       setIsEditRecord(false);
     }
@@ -124,13 +162,24 @@ function Records() {
     try {
       const isDelete = confirm("Are you sure you want to delete this record?");
       if (isDelete) {
-        await api.delete(`plants/${data.id}`, data);
-        setRecords(prev => prev?.filter( val => data.id !== val.id))
+        console.log("=== DELETING RECORD ===");
+        console.log("Record ID:", data.id);
+        
+        await api.delete(`/plants/${data.id}`);
+        setRecords(prev => prev?.filter(val => data.id !== val.id))
         toast.success("Plant data deleted.");
       }
     } catch (error) {
-      console.error(error)
-      toast.error("Error encountered while deleting record.");
+      console.error("❌ Delete Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Errors:", error.response.data.errors);
+      }
+      
+      const errorMsg = error?.response?.data?.message || "Error encountered while deleting record.";
+      toast.error(errorMsg);
     }
   }
   const loadMore = useCallback(() => {
