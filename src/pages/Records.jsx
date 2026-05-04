@@ -128,13 +128,32 @@ function Records() {
   }
   const handleUpdateRecord = async (data) => {
     try {
+      console.log("=== UPDATING RECORD ===");
+      console.log("Update Data:", data);
+      
       const res = await api.put(`/plants/${data.id}`, data);
       const updatedRecord = res.data.data || res.data;
       setRecords(prev => prev.map(record => record.id === data.id ? updatedRecord : record));
       toast.success("Plant data updated.");
     } catch (error) {
-      console.error(error);
-      toast.error(error?.message || "Error encountered during update.");
+      console.error("❌ Update Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Validation Errors:");
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`  ${field}:`, messages);
+        });
+      }
+      
+      const errorMsg = error?.response?.data?.errors 
+        ? Object.entries(error.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
+        : error?.response?.data?.message || "Error encountered during update.";
+      
+      toast.error(errorMsg);
     } finally {
       setIsEditRecord(false);
     }
