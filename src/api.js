@@ -1,6 +1,7 @@
 import axios from 'axios'
 
-const API_BASE_URL = "http://gulayan-server.test/api";
+// Use the Laragon project host. Replace port if your backend runs on a specific port.
+const API_BASE_URL = "http://gulayan-server-student-group4.test/api";
 
 export const api = axios.create({
    baseURL: API_BASE_URL,
@@ -29,13 +30,13 @@ api.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
     const data = error?.response?.data;
-    const message = data?.message ?? "Error encountered.";
+    const message = data?.message ?? error?.message ?? "Error encountered.";
 
     if (status === 401) {
       localStorage.removeItem("token");
       window.location.replace("/login");
     }
-    return Promise.reject({  ...error, message, status});
+    return Promise.reject({ ...error, message, status });
   }
 )
 
