@@ -96,13 +96,32 @@ function Records() {
   }
   const handleAddRecord = async (formData) => {
     try {
+      console.log("=== SUBMITTING FORM DATA ===");
+      console.log("Form Data:", formData);
+      
       const res = await api.post('/plants', formData);
       const newRecord = res.data.data || res.data;
       setRecords(prev => [newRecord, ...prev]);
       toast.success("New record saved.");
     } catch (error) {
-      console.error(error);
-      toast.error(error?.message || "Error encountered while saving record.");
+      console.error("❌ Add Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Validation Errors:");
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`  ${field}:`, messages);
+        });
+      }
+      
+      const errorMsg = error?.response?.data?.errors 
+        ? Object.entries(error.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
+        : error?.response?.data?.message || "Error encountered while saving record.";
+      
+      toast.error(errorMsg);
     }
 
     setIsModalOpen(false)
