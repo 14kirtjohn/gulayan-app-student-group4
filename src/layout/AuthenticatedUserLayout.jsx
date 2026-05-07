@@ -14,7 +14,7 @@ export default function AuthenticatedUserLayout() {
   }
 
   const menuItems = [
-    { id: 'dashboard', path: '/', name: 'Dashboard', icon: FaHome },
+    { id: 'dashboard', path: '/dashboard', name: 'Dashboard', icon: FaHome },
     { id: 'my-plants', path: '/my-plants', name: 'My Plants', icon: FaClipboardList },
     { id: 'settings', path: '/settings', name: 'Settings', icon: FaCog }
   ]
@@ -96,11 +96,11 @@ export default function AuthenticatedUserLayout() {
           </button>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-sm font-medium text-gray-800">Juan Dela Cruz</p>
-              <p className="text-xs text-gray-600">Admin</p>
+              <p className="text-sm font-medium text-gray-800">{JSON.parse(localStorage.getItem('user') || '{}').name || 'User'}</p>
+              <p className="text-xs text-gray-600">{JSON.parse(localStorage.getItem('user') || '{}').role || 'User'}</p>
             </div>
             <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-semibold">
-              JD
+              {JSON.parse(localStorage.getItem('user') || '{}').initials || 'U'}
             </div>
           </div>
         </header>

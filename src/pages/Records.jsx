@@ -7,7 +7,7 @@ import { api } from '../api';
 import { toast } from 'sonner';
 
 function Records() {
-  //TODO: add loading icon while ongoing ang loading ng records.
+  // ui: add loading icon while ongoing ang loading ng records..
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,34 +18,142 @@ function Records() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const [pageSize, setPageSize] = useState(15);
   const observerTarget = useRef(null);
   const isInInitialMount = useRef(true);
 
-  const handleSearchPlants = async () => {
-    // TODO search from the the backend; in case that all records is not yet loaded
+  const handleSearchPlants = async (query) => {
+    try {
+      if (!query.trim()) {
+        // If search is cleared, reload all records
+        handleLoadRecords(1, false);
+        return;
+      }
+      
+      setIsLoading(true);
+      const res = await api.get(`/plants/search?query=${encodeURIComponent(query)}`);
+      
+      // Handle different response structures
+      let searchResults = [];
+      if (Array.isArray(res.data.data)) {
+        searchResults = res.data.data;
+      } else if (Array.isArray(res.data)) {
+        searchResults = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        searchResults = Object.values(res.data).flat().filter(item => typeof item === 'object');
+      }
+      
+      console.log("Search Results:", searchResults);
+      setRecords(searchResults);
+      setHasMore(false); // Disable pagination during search
+    } catch (error) {
+      console.error("Search error:", error);
+      toast.error(error?.response?.data?.message || "Error searching records.");
+    } finally {
+      setIsLoading(false);
+    }
   }
   const handleLoadRecords = async (page = 1, append = false) => {
-    //TODO: load the data from the database
-    //TODO: implement paginated data loading
+    try {
+      setIsLoadingMore(append);
+      if (!append) setIsLoading(true);
+      
+      const res = await api.get(`/plants?page=${page}&per_page=${pageSize}`);
+      console.log("=== API RESPONSE ===");
+      console.log("Full Response:", res);
+      
+      // Handle different response structures
+      let newRecords = [];
+      if (Array.isArray(res.data.data)) {
+        newRecords = res.data.data;
+      } else if (Array.isArray(res.data)) {
+        newRecords = res.data;
+      } else if (res.data && typeof res.data === 'object') {
+        newRecords = Object.values(res.data).flat().filter(item => typeof item === 'object');
+      }
+      
+      console.log("Processed Records:", newRecords);
+      console.log("Number of records:", newRecords.length);
+      
+      // Extract total from response if available
+      if (res.data.total) {
+        setTotalRecords(res.data.total);
+      }
+      
+      setRecords(prev => append ? [...prev, ...newRecords] : newRecords);
+      setHasMore(newRecords.length > 0);
+    } catch (error) {
+      console.error("❌ Error loading records:", error);
+      console.error("Error message:", error?.message);
+      console.error("Response status:", error?.response?.status);
+      console.error("Response data:", error?.response?.data);
+      toast.error(error?.response?.data?.message || "Error loading records.");
+    } finally {
+      setIsLoading(false);
+      setIsLoadingMore(false);
+    }
   }
   const handleAddRecord = async (formData) => {
     try {
-      //TODO: make add new record functional
+      console.log("=== SUBMITTING FORM DATA ===");
+      console.log("Form Data:", formData);
+      
+      const res = await api.post('/plants', formData);
+      const newRecord = res.data.data || res.data;
+      setRecords(prev => [newRecord, ...prev]);
       toast.success("New record saved.");
     } catch (error) {
-      console.error(error);
-      toast.error("Error encountered while saving record.");
+      console.error("❌ Add Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Validation Errors:");
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`  ${field}:`, messages);
+        });
+      }
+      
+      const errorMsg = error?.response?.data?.errors 
+        ? Object.entries(error.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
+        : error?.response?.data?.message || "Error encountered while saving record.";
+      
+      toast.error(errorMsg);
     }
 
     setIsModalOpen(false)
   }
   const handleUpdateRecord = async (data) => {
     try {
-      //TODO make update record functional
+      console.log("=== UPDATING RECORD ===");
+      console.log("Update Data:", data);
+      
+      const res = await api.put(`/plants/${data.id}`, data);
+      const updatedRecord = res.data.data || res.data;
+      setRecords(prev => prev.map(record => record.id === data.id ? updatedRecord : record));
       toast.success("Plant data updated.");
     } catch (error) {
-      console.error(error);
-      toast.error("Error encountered during update.");
+      console.error("❌ Update Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Validation Errors:");
+        Object.entries(error.response.data.errors).forEach(([field, messages]) => {
+          console.error(`  ${field}:`, messages);
+        });
+      }
+      
+      const errorMsg = error?.response?.data?.errors 
+        ? Object.entries(error.response.data.errors)
+            .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+            .join('\n')
+        : error?.response?.data?.message || "Error encountered during update.";
+      
+      toast.error(errorMsg);
     } finally {
       setIsEditRecord(false);
     }
@@ -54,20 +162,26 @@ function Records() {
     try {
       const isDelete = confirm("Are you sure you want to delete this record?");
       if (isDelete) {
-        await api.delete(`plants/${data.id}`, data);
-        setRecords(prev => prev?.filter( val => data.id !== val.id))
+        console.log("=== DELETING RECORD ===");
+        console.log("Record ID:", data.id);
+        
+        await api.delete(`/plants/${data.id}`);
+        setRecords(prev => prev?.filter(val => data.id !== val.id))
         toast.success("Plant data deleted.");
       }
     } catch (error) {
-      console.error(error)
-      toast.error("Error encountered while deleting record.");
+      console.error("❌ Delete Record Error:");
+      console.error("Status:", error?.response?.status);
+      console.error("Error Message:", error?.response?.data?.message);
+      
+      if (error?.response?.data?.errors) {
+        console.error("Errors:", error.response.data.errors);
+      }
+      
+      const errorMsg = error?.response?.data?.message || "Error encountered while deleting record.";
+      toast.error(errorMsg);
     }
   }
-  const filteredRecords = records.filter(record =>
-    record.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.variety?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.seedling_source?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
   const loadMore = useCallback(() => {
     if (!isLoadingMore && hasMore && !searchTerm) {
       const nextPage = currentPage + 1;
@@ -112,7 +226,7 @@ function Records() {
     }
     if (searchTerm) {
       setCurrentPage(1);
-      setHasMore(false);
+      handleSearchPlants(searchTerm);
     } else {
       setCurrentPage(1);
       setHasMore(true);
@@ -150,7 +264,6 @@ function Records() {
       </div>
 
       {/* Records Table */}
-      {/* TODO implement pagination plants table */}
       <div className="bg-white rounded-lg shadow-md border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto max-h-[580px] overflow-y-auto">
           <table className="relative w-full">
@@ -178,7 +291,7 @@ function Records() {
                     </tr>
                   ) : (
                     <>
-                      {filteredRecords.map((record) => (
+                      {records.map((record) => (
                         <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-4 px-6 text-sm text-gray-800 font-medium">{record.name}</td>
                           <td className="py-4 px-6 text-sm text-gray-600">{record?.variety || "-"}</td>
@@ -233,7 +346,7 @@ function Records() {
           </table>
         </div>
 
-        {searchTerm && filteredRecords.length === 0 && (
+        {searchTerm && records.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No records found matching your search.
           </div>
@@ -243,6 +356,44 @@ function Records() {
         {!hasMore && records.length > 0 && !searchTerm && (
           <div className="text-center py-4 text-gray-400 text-sm border-t border-gray-100">
             No more records to load
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {!searchTerm && records.length > 0 && (
+          <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50">
+            <div className="text-sm text-gray-600">
+              Page <span className="font-medium">{currentPage}</span> 
+              {totalRecords > 0 && ` • Showing ${records.length} records`}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  if (currentPage > 1) {
+                    setCurrentPage(currentPage - 1);
+                    handleLoadRecords(currentPage - 1, false);
+                  }
+                }}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border border-gray-300 rounded text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                ← Previous
+              </button>
+              
+              <button
+                onClick={() => {
+                  if (hasMore) {
+                    setCurrentPage(currentPage + 1);
+                    handleLoadRecords(currentPage + 1, false);
+                  }
+                }}
+                disabled={!hasMore}
+                className="px-3 py-1 border border-gray-300 rounded text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              >
+                Next →
+              </button>
+            </div>
           </div>
         )}
       </div>
